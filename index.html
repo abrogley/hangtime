@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HangTime</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121214;
+            color: #e1e1e6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid #29292e;
+        }
+        .hidden { display: none !important; }
+        h2 { color: #ffffff; margin-top: 0; }
+        p { color: #a4a4a4; }
+        
+        input[type="text"] {
+            width: 85%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #121214;
+            color: #ffffff;
+            border: 2px solid #29292e;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+        input[type="text"]:focus {
+            border-color: #00adb5;
+            outline: none;
+        }
+        .input-group {
+            text-align: left;
+            margin: 0 auto 15px auto;
+            width: 85%;
+        }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #00adb5;
+        }
+        .input-group input {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        button {
+            background-color: #00adb5;
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: bold;
+        }
+        button:hover { background-color: #008c95; }
+        
+        .word-display {
+            font-size: 28px;
+            letter-spacing: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .hint-box {
+            background-color: #252529;
+            border-left: 4px solid #ffb100;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-style: italic;
+            font-size: 15px;
+            color: #e1e1e6;
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 20px;
+        }
+        .key {
+            background: #29292e;
+            color: #ffffff;
+            border: none;
+            padding: 10px 0;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .key:hover { background: #323239; }
+        .key:disabled {
+            background: #121214;
+            color: #4c4c54;
+            cursor: not-allowed;
+        }
+        .lives {
+            font-size: 18px;
+            color: #ff4a4a;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .share-box {
+            margin-top: 15px;
+            padding: 12px;
+            background: #121214;
+            border-radius: 6px;
+            word-break: break-all;
+            font-size: 14px;
+            border: 1px solid #29292e;
+            color: #a4a4a4;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+        .action-layout {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .secondary-btn {
+            background-color: #29292e;
+            color: #e1e1e6;
+        }
+        .secondary-btn:hover { background-color: #323239; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- STATE 1: CREATE A CHALLENGE -->
+    <div id="creator-view">
+        <h2>Challenge a Friend to HangTime!</h2>
+        <p>Enter a secret word and a crucial hint below to generate your custom game link.</p>
+        
+        <div class="input-group">
+            <label for="secret-word-input">Secret Word:</label>
+            <input type="text" id="secret-word-input" placeholder="e.g., HOURGLASS" maxlength="20">
+        </div>
+
+        <div class="input-group">
+            <label for="hint-input">Last-chance Hint (Optional):</label>
+            <input type="text" id="hint-input" placeholder="e.g., Timer" maxlength="50">
+        </div>
+        
+        <button onclick="generateChallenge()">Generate Game Link</button>
+        
+        <div id="share-container" class="hidden">
+            <p>Copy and send this link to your friend:</p>
+            <div class="share-box" id="share-link-text"></div>
+            <div class="action-layout">
+                <button onclick="copyToClipboard('share-link-text')">📋 Copy Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATE 2: PLAY THE CHALLENGE -->
+    <div id="game-view" class="hidden">
+        <h2>HangTime!</h2>
+        
+        <!-- Hint Element (Hidden initially) -->
+        <div id="hint-display" class="hint-box hidden">
+            🚨 <strong>Last-Chance Hint:</strong> <span id="hint-text"></span>
+        </div>
+
+        <div class="lives">Strikes Left: <span id="lives-count">6</span></div>
+        <div class="word-display" id="word-display"></div>
+        <div class="keyboard" id="keyboard"></div>
+        
+        <!-- Game Over & Performance Recap View -->
+        <div id="endgame-panel" class="hidden">
+            <h3 id="game-result"></h3>
+            <p>Share your performance back with your challenger:</p>
+            <div class="share-box" id="result-summary-text"></div>
+            
+            <div class="action-layout">
+                <button onclick="copyToClipboard('result-summary-text')">📋 Copy Results</button>
+                <button class="secondary-btn" onclick="window.location.href = window.location.pathname">Create New Game</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let targetWord = "";
+    let targetHint = "";
+    let guessedLetters = new Set();
+    let remainingLives = 6;
+    const totalLives = 6;
+    let matchHistoryTimeline = [];
+
+    // Parse URL parameters on load
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedWord = urlParams.get('word');
+    const encodedHint = urlParams.get('hint');
+
+    if (encodedWord) {
+        try {
+            targetWord = atob(encodedWord).toUpperCase().replace(/[^A-Z ]/g, "");
+            if (encodedHint) {
+                targetHint = atob(encodedHint);
+            }
+
+            if (targetWord.length > 0) {
+                initGame();
+            } else {
+                alert("Invalid challenge link.");
+            }
+        } catch (e) {
+            alert("Failed to load the challenge. The link might be broken.");
+        }
+    }
+
+    // State 1: Generate Link
+    function generateChallenge() {
+        const wordInput = document.getElementById('secret-word-input').value.trim().toUpperCase();
+        const hintInput = document.getElementById('hint-input').value.trim();
+        const cleanWord = wordInput.replace(/[^A-Z ]/g, "");
+        
+        if (!cleanWord) {
+            alert("Please enter a valid secret word (letters only).");
+            return;
+        }
+
+        const encodedW = btoa(cleanWord);
+        let challengeUrl = `${window.location.origin}${window.location.pathname}?word=${encodedW}`;
+        
+        if (hintInput) {
+            const encodedH = btoa(hintInput);
+            challengeUrl += `&hint=${encodedH}`;
+        }
+        
+        document.getElementById('share-link-text').innerText = challengeUrl;
+        document.getElementById('share-container').classList.remove('hidden');
+    }
+
+    // State 2: Initialize Game
+    function initGame() {
+        document.getElementById('creator-view').classList.add('hidden');
+        document.getElementById('game-view').classList.remove('hidden');
+        
+        if (targetHint) {
+            document.getElementById('hint-text').innerText = targetHint;
+        }
+        
+        renderWord();
+        buildKeyboard();
+    }
+
+    // Render Blank Underlines / Correctly Guessed Letters
+    function renderWord() {
+        const display = Array.from(targetWord).map(letter => {
+            if (letter === " ") return " ";
+            return guessedLetters.has(letter) ? letter : "_";
+        }).join("");
+        
+        document.getElementById('word-display').innerText = display;
+
+        if (!display.includes("_")) {
+            endGame(true);
+        }
+    }
+
+    // Build Virtual Keyboard
+    function buildKeyboard() {
+        const keyboardContainer = document.getElementById('keyboard');
+        keyboardContainer.innerHTML = "";
+        
+        for (let i = 65; i <= 90; i++) {
+            const letter = String.fromCharCode(i);
+            const btn = document.createElement('button');
+            btn.classList.add('key');
+            btn.innerText = letter;
+            btn.setAttribute('id', `key-${letter}`);
+            btn.onclick = () => handleGuess(letter);
+            keyboardContainer.appendChild(btn);
+        }
+    }
+
+    // Process a Letter Input Guess
+    function handleGuess(letter) {
+        guessedLetters.add(letter);
+        document.getElementById(`key-${letter}`).disabled = true;
+
+        if (targetWord.includes(letter)) {
+            matchHistoryTimeline.push("🟩");
+            renderWord();
+        } else {
+            matchHistoryTimeline.push("🟥");
+            remainingLives--;
+            document.getElementById('lives-count').innerText = remainingLives;
+            
+            if (remainingLives === 1 && targetHint) {
+                document.getElementById('hint-display').classList.remove('hidden');
+            }
+
+            if (remainingLives <= 0) {
+                endGame(false);
+            }
+        }
+    }
+
+    // Handle the End of a Match
+    function endGame(isWin) {
+        const resultText = document.getElementById('game-result');
+        const summaryBox = document.getElementById('result-summary-text');
+        
+        document.getElementById('keyboard').classList.add('hidden');
+        document.getElementById('hint-display').classList.add('hidden');
+        
+        const formattedHint = targetHint ? targetHint : "None provided";
+        let scoreSummaryHeader = "";
+
+        if (isWin) {
+            resultText.innerText = "🎉 Victory! You cracked the challenge!";
+            resultText.style.color = "#00adb5";
+            const strikesSpent = totalLives - remainingLives;
+            scoreSummaryHeader = `🏆 Won (${strikesSpent}/${totalLives} Strikes Used)`;
+        } else {
+            resultText.innerText = `😢 Game Over! Defeated.`;
+            resultText.style.color = "#ff4a4a";
+            scoreSummaryHeader = `❌ Lost (X/${totalLives} Strikes)`;
+        }
+
+        const visualEmojiChain = matchHistoryTimeline.join("");
+
+        summaryBox.innerText = `🎮 HangTime Challenge\n` +
+                               `${scoreSummaryHeader}\n` +
+                               `${visualEmojiChain}\n\n` +
+                               `🔤 Word: ${targetWord}\n` +
+                               `💡 Hint: ${formattedHint}`;
+
+        document.getElementById('endgame-panel').classList.remove('hidden');
+    }
+
+    // Helper Utility to copy text to clipboard
+    function copyToClipboard(elementId) {
+        const textToCopy = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            alert("Copied to clipboard successfully!");
+        }).catch(err => {
+            alert("Failed to copy. Please manually highlight and copy.");
+        });
+    }
+
+    // Global Event Listener for Physical Hardware Keyboard Input
+    window.addEventListener('keydown', (event) => {
+        const gameViewActive = !document.getElementById('game-view').classList.contains('hidden');
+        const keyboardActive = !document.getElementById('keyboard').classList.contains('hidden');
+        
+        if (gameViewActive && keyboardActive) {
+            const letter = event.key.toUpperCase();
+            
+            if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+                if (!guessedLetters.has(letter)) {
+                    handleGuess(letter);
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
