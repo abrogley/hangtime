@@ -225,14 +225,14 @@
 
     let totalLives = 6;
     if (targetGuesses) {
-        totalLives = parseInt(targetGuesses);
-        if (totalLives == NaN) {
+        const totalLivesInput = parseInt(targetGuesses);
+        if (totalLivesInput == NaN) {
             totalLives = 6;
         }
-        if (totalLives < 3) {
+        if (totalLivesInput < 3) {
             totalLives = 3;
         }
-        if (totalLives > 10) {
+        if (totalLivesInput > 10) {
             totalLives = 10;
         }
     }
