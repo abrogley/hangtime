@@ -232,6 +232,8 @@
         const totalStrikesInput = parseInt(configuredStrikes);
         if (totalStrikesInput == NaN) {
             totalStrikes = 6;
+        } else {
+            totalStrikes = totalStrikesInput;
         }
         if (totalStrikesInput < 3) {
             totalStrikes = 3;
