@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HangTime</title>
+    <title>HangTime! A Hangman Game</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -156,10 +156,11 @@
     <!-- STATE 1: CREATE A CHALLENGE -->
     <div id="creator-view">
         <h2>Challenge a Friend to HangTime!</h2>
-        <p>Enter a secret word and a crucial hint below to generate your custom game link.</p>
+        <p>Generate your custom game link. Enter a secret hangman word and an
+            optional hint to be given before the last strike.</p>
         
         <div class="input-group">
-            <label for="secret-word-input">Secret Word:</label>
+            <label for="secret-word-input">Hangman Word:</label>
             <input type="text" id="secret-word-input" placeholder="e.g., hourglass" maxlength="20">
         </div>
 
@@ -187,6 +188,9 @@
     <!-- STATE 2: PLAY THE CHALLENGE -->
     <div id="game-view" class="hidden">
         <h2>HangTime!</h2>
+        <p>Guess letters in the secret Hangman word. Be mindful of your
+            remaining strikes!
+        </p>
         
         <!-- Hint Element (Hidden initially) -->
         <div id="hint-display" class="hint-box hidden">
