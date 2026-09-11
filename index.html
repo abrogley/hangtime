@@ -334,17 +334,17 @@
         document.getElementById('hint-display').classList.add('hidden');
         
         const formattedHint = targetHint ? targetHint : "None provided";
+        const strikesSpent = totalLives - remainingLives;
         let scoreSummaryHeader = "";
 
         if (isWin) {
             resultText.innerText = "🎉 Victory! You cracked the challenge!";
             resultText.style.color = "#00adb5";
-            const strikesSpent = totalLives - remainingLives;
             scoreSummaryHeader = `🏆 Won (${strikesSpent}/${totalLives} Strikes Used)`;
         } else {
             resultText.innerText = `😢 Game Over! Defeated.`;
             resultText.style.color = "#ff4a4a";
-            scoreSummaryHeader = `❌ Lost (X/${totalLives} Strikes)`;
+            scoreSummaryHeader = `❌ Lost (${strikesSpent}/${totalLives} Strikes)`;
         }
 
         const visualEmojiChain = matchHistoryTimeline.join("");
