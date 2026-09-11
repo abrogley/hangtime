@@ -160,12 +160,17 @@
         
         <div class="input-group">
             <label for="secret-word-input">Secret Word:</label>
-            <input type="text" id="secret-word-input" placeholder="e.g., HOURGLASS" maxlength="20">
+            <input type="text" id="secret-word-input" placeholder="e.g., hourglass" maxlength="20">
         </div>
 
         <div class="input-group">
             <label for="hint-input">Last-chance Hint (Optional):</label>
-            <input type="text" id="hint-input" placeholder="e.g., Timer" maxlength="50">
+            <input type="text" id="hint-input" placeholder="e.g., timer" maxlength="50">
+        </div>
+
+        <div class="input-group">
+            <label for="guesses-input">Maximum wrong guesses (Optional, between 3 and 10, default is 6):</label>
+            <input type="text" id="guesses-input" placeholder="e.g., 6" maxlength="2">
         </div>
         
         <button onclick="generateChallenge()">Generate Game Link</button>
@@ -188,7 +193,7 @@
             🚨 <strong>Last-Chance Hint:</strong> <span id="hint-text"></span>
         </div>
 
-        <div class="lives">Strikes Left: <span id="lives-count">6</span></div>
+        <div class="lives">Strikes Left: <span id="lives-count">?</span></div>
         <div class="word-display" id="word-display"></div>
         <div class="keyboard" id="keyboard"></div>
         
@@ -210,14 +215,28 @@
     let targetWord = "";
     let targetHint = "";
     let guessedLetters = new Set();
-    let remainingLives = 6;
-    const totalLives = 6;
     let matchHistoryTimeline = [];
 
     // Parse URL parameters on load
     const urlParams = new URLSearchParams(window.location.search);
     const encodedWord = urlParams.get('word');
     const encodedHint = urlParams.get('hint');
+    const targetGuesses = urlParams.get('guesses');
+
+    let totalLives = 6;
+    if (targetGuesses) {
+        totalLives = parseInt(targetGuesses);
+        if (totalLives == NaN) {
+            totalLives = 6;
+        }
+        if (totalLives < 3) {
+            totalLives = 3;
+        }
+        if (totalLives > 10) {
+            totalLives = 10;
+        }
+    }
+    let remainingLives = totalLives;
 
     if (encodedWord) {
         try {
@@ -240,6 +259,7 @@
     function generateChallenge() {
         const wordInput = document.getElementById('secret-word-input').value.trim().toUpperCase();
         const hintInput = document.getElementById('hint-input').value.trim();
+        const guessesInput = document.getElementById('guesses-input').value.trim();
         const cleanWord = wordInput.replace(/[^A-Z ]/g, "");
         
         if (!cleanWord) {
@@ -254,6 +274,10 @@
             const encodedH = btoa(hintInput);
             challengeUrl += `&hint=${encodedH}`;
         }
+
+        if (guessesInput) {
+            challengeUrl += `&guesses=${guessesInput}`;
+        }
         
         document.getElementById('share-link-text').innerText = challengeUrl;
         document.getElementById('share-container').classList.remove('hidden');
@@ -263,6 +287,7 @@
     function initGame() {
         document.getElementById('creator-view').classList.add('hidden');
         document.getElementById('game-view').classList.remove('hidden');
+        document.getElementById('lives-count').innerText = remainingLives;
         
         if (targetHint) {
             document.getElementById('hint-text').innerText = targetHint;
