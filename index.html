@@ -119,7 +119,7 @@
             color: #4c4c54;
             cursor: not-allowed;
         }
-        .lives {
+        .strikes {
             font-size: 18px;
             color: #ff4a4a;
             font-weight: bold;
@@ -169,8 +169,8 @@
         </div>
 
         <div class="input-group">
-            <label for="guesses-input">Maximum wrong guesses (Optional, between 3 and 10, default is 6):</label>
-            <input type="text" id="guesses-input" placeholder="e.g., 6" maxlength="2">
+            <label for="strikes-input">Maximum strikes (Optional, between 3 and 10, default is 6):</label>
+            <input type="text" id="strikes-input" placeholder="e.g., 6" maxlength="2">
         </div>
         
         <button onclick="generateChallenge()">Generate Game Link</button>
@@ -193,7 +193,7 @@
             🚨 <strong>Last-Chance Hint:</strong> <span id="hint-text"></span>
         </div>
 
-        <div class="lives">Strikes Left: <span id="lives-count">?</span></div>
+        <div class="strikes">Strikes Left: <span id="strikes-count">?</span></div>
         <div class="word-display" id="word-display"></div>
         <div class="keyboard" id="keyboard"></div>
         
@@ -221,22 +221,22 @@
     const urlParams = new URLSearchParams(window.location.search);
     const encodedWord = urlParams.get('word');
     const encodedHint = urlParams.get('hint');
-    const targetGuesses = urlParams.get('guesses');
+    const configuredStrikes = urlParams.get('strikes');
 
-    let totalLives = 6;
-    if (targetGuesses) {
-        const totalLivesInput = parseInt(targetGuesses);
-        if (totalLivesInput == NaN) {
-            totalLives = 6;
+    let totalStrikes = 6;
+    if (configuredStrikes) {
+        const totalStrikesInput = parseInt(configuredStrikes);
+        if (totalStrikesInput == NaN) {
+            totalStrikes = 6;
         }
-        if (totalLivesInput < 3) {
-            totalLives = 3;
+        if (totalStrikesInput < 3) {
+            totalStrikes = 3;
         }
-        if (totalLivesInput > 10) {
-            totalLives = 10;
+        if (totalStrikesInput > 10) {
+            totalStrikes = 10;
         }
     }
-    let remainingLives = totalLives;
+    let remainingStrikes = totalStrikes;
 
     if (encodedWord) {
         try {
@@ -259,7 +259,7 @@
     function generateChallenge() {
         const wordInput = document.getElementById('secret-word-input').value.trim().toUpperCase();
         const hintInput = document.getElementById('hint-input').value.trim();
-        const guessesInput = document.getElementById('guesses-input').value.trim();
+        const strikesInput = document.getElementById('strikes-input').value.trim();
         const cleanWord = wordInput.replace(/[^A-Z ]/g, "");
         
         if (!cleanWord) {
@@ -275,8 +275,8 @@
             challengeUrl += `&hint=${encodedH}`;
         }
 
-        if (guessesInput) {
-            challengeUrl += `&guesses=${guessesInput}`;
+        if (strikesInput) {
+            challengeUrl += `&strikes=${strikesInput}`;
         }
         
         document.getElementById('share-link-text').innerText = challengeUrl;
@@ -287,7 +287,7 @@
     function initGame() {
         document.getElementById('creator-view').classList.add('hidden');
         document.getElementById('game-view').classList.remove('hidden');
-        document.getElementById('lives-count').innerText = remainingLives;
+        document.getElementById('strikes-count').innerText = remainingStrikes;
         
         if (targetHint) {
             document.getElementById('hint-text').innerText = targetHint;
@@ -337,14 +337,14 @@
             renderWord();
         } else {
             matchHistoryTimeline.push("🟥");
-            remainingLives--;
-            document.getElementById('lives-count').innerText = remainingLives;
+            remainingStrikes--;
+            document.getElementById('strikes-count').innerText = remainingStrikes;
             
-            if (remainingLives === 1 && targetHint) {
+            if (remainingStrikes === 1 && targetHint) {
                 document.getElementById('hint-display').classList.remove('hidden');
             }
 
-            if (remainingLives <= 0) {
+            if (remainingStrikes <= 0) {
                 endGame(false);
             }
         }
@@ -359,17 +359,17 @@
         document.getElementById('hint-display').classList.add('hidden');
         
         const formattedHint = targetHint ? targetHint : "None provided";
-        const strikesSpent = totalLives - remainingLives;
+        const strikesSpent = totalStrikes - remainingStrikes;
         let scoreSummaryHeader = "";
 
         if (isWin) {
             resultText.innerText = "🎉 Victory! You cracked the challenge!";
             resultText.style.color = "#00adb5";
-            scoreSummaryHeader = `🏆 Won (${strikesSpent}/${totalLives} Strikes Used)`;
+            scoreSummaryHeader = `🏆 Won (${strikesSpent}/${totalStrikes} Strikes Used)`;
         } else {
             resultText.innerText = `😢 Game Over! Defeated.`;
             resultText.style.color = "#ff4a4a";
-            scoreSummaryHeader = `❌ Lost (${strikesSpent}/${totalLives} Strikes)`;
+            scoreSummaryHeader = `❌ Lost (${strikesSpent}/${totalStrikes} Strikes)`;
         }
 
         const visualEmojiChain = matchHistoryTimeline.join("");
