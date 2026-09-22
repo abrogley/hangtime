@@ -302,7 +302,7 @@
         const gameIDHashed = cyrb53(gameParametersEncoded);
         let challengeUrl = `${window.location.origin}${window.location.pathname}?gameparams=${gameParametersEncoded}`;
 
-        document.getElementById('share-link-text').innerText = `${challengeUrl}\n🖊 Guess my HangTime word! Game ID: ${gameIDHashed}`;
+        document.getElementById('share-link-text').innerText = `🖊 Guess my HangTime word! Game ID: ${gameIDHashed}\n${challengeUrl}`;
         document.getElementById('share-container').classList.remove('hidden');
     }
 
