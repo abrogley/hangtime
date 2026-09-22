@@ -223,9 +223,31 @@
 
     // Parse URL parameters on load
     const urlParams = new URLSearchParams(window.location.search);
-    const encodedWord = urlParams.get('word');
-    const encodedHint = urlParams.get('hint');
-    const configuredStrikes = urlParams.get('strikes');
+    const gameID = urlParams.get('gameid');
+    let gameParameters = "";
+    
+    if (gameID) {
+        try {
+            gameParameters = atob(gameID);
+
+            if (gameParameters.length < 1) {
+                alert("Invalid challenge link.");
+            }
+        } catch (e) {
+            alert("Failed to load the challenge. The link might be broken.");
+        }
+    }
+
+    // Separate gameParameters string into a configuration dictionary
+    const configDictionary = gameParameters.split('&').reduce((dict, pair) => {
+        const [key, value] = pair.split('=');
+        dict[key] = value;
+        return dict;
+    }, {});
+
+    const encodedWord = configDictionary['word'];
+    const encodedHint = configDictionary['hint'];
+    const configuredStrikes = configDictionary['strikes'];
 
     let totalStrikes = 6;
     if (configuredStrikes) {
@@ -274,16 +296,19 @@
         }
 
         const encodedW = btoa(cleanWord);
-        let challengeUrl = `${window.location.origin}${window.location.pathname}?word=${encodedW}`;
+        let gameParameters = `word=${encodedW}`;
         
         if (hintInput) {
             const encodedH = btoa(hintInput);
-            challengeUrl += `&hint=${encodedH}`;
+            gameParameters += `&hint=${encodedH}`;
         }
 
         if (strikesInput) {
-            challengeUrl += `&strikes=${strikesInput}`;
+            gameParameters += `&strikes=${strikesInput}`;
         }
+
+        const gameID = btoa(gameParameters);
+        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameid=${gameID}`;
         
         document.getElementById('share-link-text').innerText = challengeUrl;
         document.getElementById('share-container').classList.remove('hidden');
