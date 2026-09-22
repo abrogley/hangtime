@@ -223,15 +223,15 @@
 
     // Parse URL parameters on load
     const urlParams = new URLSearchParams(window.location.search);
-    const gameIDEncoded = urlParams.get('gameid');
+    const gameParametersEncoded = urlParams.get('gameparams');
     let gameParameters = "";
     
-    if (gameIDEncoded) {
+    if (gameParametersEncoded) {
         try {
-            if (gameIDEncoded.length < 1) {
+            if (gameParametersEncoded.length < 1) {
                 alert("Invalid challenge link.");
             }
-            gameParameters = atob(gameIDEncoded);
+            gameParameters = atob(gameParametersEncoded);
         } catch (e) {
             alert("Failed to load the challenge. The link might be broken.");
         }
@@ -244,13 +244,9 @@
         return dict;
     }, {});
 
-    const encodedWord = configDictionary['word'];
-    const encodedHint = configDictionary['hint'];
-    const configuredStrikes = configDictionary['strikes'];
-
     let totalStrikes = 6;
-    if (configuredStrikes) {
-        const totalStrikesInput = parseInt(configuredStrikes);
+    if (configDictionary['strikes']) {
+        const totalStrikesInput = parseInt(configDictionary['strikes']);
         if (totalStrikesInput == NaN) {
             totalStrikes = 6;
         } else {
@@ -265,12 +261,10 @@
     }
     let remainingStrikes = totalStrikes;
 
-    if (encodedWord) {
+    if (configDictionary['word']) {
         try {
-            targetWord = atob(encodedWord).toUpperCase().replace(/[^A-Z ]/g, "");
-            if (encodedHint) {
-                targetHint = atob(encodedHint);
-            }
+            targetWord = configDictionary['word'].toUpperCase().replace(/[^A-Z ]/g, "");
+            targetHint = configDictionary['hint'];
 
             if (targetWord.length > 0) {
                 initGame();
@@ -294,23 +288,21 @@
             return;
         }
 
-        const encodedW = btoa(cleanWord);
-        let gameParameters = `word=${encodedW}`;
+        let gameParameters = `word=${cleanWord}`;
         
         if (hintInput) {
-            const encodedH = btoa(hintInput);
-            gameParameters += `&hint=${encodedH}`;
+            gameParameters += `&hint=${hintInput}`;
         }
 
         if (strikesInput) {
             gameParameters += `&strikes=${strikesInput}`;
         }
 
-        const gameIDGenerated = btoa(gameParameters);
-        const gameIDGeneratedHashed = cyrb53(gameIDGenerated);
-        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameid=${gameIDGenerated}`;
+        const gameParametersEncoded = btoa(gameParameters);
+        const gameIDHashed = cyrb53(gameParametersEncoded);
+        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameparams=${gameParametersEncoded}`;
 
-        document.getElementById('share-link-text').innerText = `${challengeUrl}\n🖊 Guess my HangTime word! Game ID: ${gameIDGeneratedHashed}`;
+        document.getElementById('share-link-text').innerText = `${challengeUrl}\n🖊 Guess my HangTime word! Game ID: ${gameIDHashed}`;
         document.getElementById('share-container').classList.remove('hidden');
     }
 
@@ -405,7 +397,7 @@
         resultText.innerText += `\n🔤 Word: ${targetWord}\n💡 Hint: ${formattedHint}`;
 
         const visualEmojiChain = matchHistoryTimeline.join("");
-        const gameIDHashed = cyrb53(gameIDEncoded);
+        const gameIDHashed = cyrb53(gameParametersEncoded);
         summaryBox.innerText = `🎮 HangTime Challenge Game ID: ${gameIDHashed}\n` +
                                `${scoreSummaryHeader}\n` +
                                `${visualEmojiChain}\n`;
