@@ -180,7 +180,7 @@
             <p>Copy and send this link to your friend:</p>
             <div class="share-box" id="share-link-text"></div>
             <div class="action-layout">
-                <button onclick="copyToClipboard('share-link-text')">📋 Copy Link</button>
+                <button onclick="copyToClipboard('share-link-text')">📋 Copy Challenge</button>
             </div>
         </div>
     </div>
@@ -223,16 +223,15 @@
 
     // Parse URL parameters on load
     const urlParams = new URLSearchParams(window.location.search);
-    const gameID = urlParams.get('gameid');
+    const gameIDEncoded = urlParams.get('gameid');
     let gameParameters = "";
     
-    if (gameID) {
+    if (gameIDEncoded) {
         try {
-            gameParameters = atob(gameID);
-
-            if (gameParameters.length < 1) {
+            if (gameIDEncoded.length < 1) {
                 alert("Invalid challenge link.");
             }
+            gameParameters = atob(gameIDEncoded);
         } catch (e) {
             alert("Failed to load the challenge. The link might be broken.");
         }
@@ -307,10 +306,11 @@
             gameParameters += `&strikes=${strikesInput}`;
         }
 
-        const gameID = btoa(gameParameters);
-        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameid=${gameID}`;
-        
-        document.getElementById('share-link-text').innerText = challengeUrl;
+        const gameIDGenerated = btoa(gameParameters);
+        const gameIDGeneratedHashed = cyrb53(gameIDGenerated);
+        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameid=${gameIDGenerated}`;
+
+        document.getElementById('share-link-text').innerText = `${challengeUrl}\n🖊 Guess my HangTime word! Game ID: ${gameIDGeneratedHashed}`;
         document.getElementById('share-container').classList.remove('hidden');
     }
 
@@ -402,14 +402,13 @@
             resultText.style.color = "#ff4a4a";
             scoreSummaryHeader = `❌ Lost (${strikesSpent}/${totalStrikes} Strikes)`;
         }
+        resultText.innerText += `\n🔤 Word: ${targetWord}\n💡 Hint: ${formattedHint}`;
 
         const visualEmojiChain = matchHistoryTimeline.join("");
-
-        summaryBox.innerText = `🎮 HangTime Challenge\n` +
+        const gameIDHashed = cyrb53(gameIDEncoded);
+        summaryBox.innerText = `🎮 HangTime Challenge Game ID: ${gameIDHashed}\n` +
                                `${scoreSummaryHeader}\n` +
-                               `${visualEmojiChain}\n\n` +
-                               `🔤 Word: ${targetWord}\n` +
-                               `💡 Hint: ${formattedHint}`;
+                               `${visualEmojiChain}\n`;
 
         document.getElementById('endgame-panel').classList.remove('hidden');
     }
@@ -422,6 +421,22 @@
         }).catch(err => {
             alert("Failed to copy. Please manually highlight and copy.");
         });
+    }
+
+    // Creates non-secure non-collision-avoiding game ID
+    function cyrb53(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+            h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+            h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        }
+        let hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
+        return hash >>> 0;
     }
 
     // Global Event Listener for Physical Hardware Keyboard Input
