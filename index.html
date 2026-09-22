@@ -180,7 +180,7 @@
             <p>Copy and send this link to your friend:</p>
             <div class="share-box" id="share-link-text"></div>
             <div class="action-layout">
-                <button onclick="copyToClipboard('share-link-text')">📋 Copy Link</button>
+                <button onclick="copyToClipboard('share-link-text')">📋 Copy Challenge</button>
             </div>
         </div>
     </div>
@@ -223,13 +223,30 @@
 
     // Parse URL parameters on load
     const urlParams = new URLSearchParams(window.location.search);
-    const encodedWord = urlParams.get('word');
-    const encodedHint = urlParams.get('hint');
-    const configuredStrikes = urlParams.get('strikes');
+    const gameParametersEncoded = urlParams.get('gameparams');
+    let gameParameters = "";
+    
+    if (gameParametersEncoded) {
+        try {
+            if (gameParametersEncoded.length < 1) {
+                alert("Invalid challenge link.");
+            }
+            gameParameters = atob(gameParametersEncoded);
+        } catch (e) {
+            alert("Failed to load the challenge. The link might be broken.");
+        }
+    }
+
+    // Separate gameParameters string into a configuration dictionary
+    const configDictionary = gameParameters.split('&').reduce((dict, pair) => {
+        const [key, value] = pair.split('=');
+        dict[key] = value;
+        return dict;
+    }, {});
 
     let totalStrikes = 6;
-    if (configuredStrikes) {
-        const totalStrikesInput = parseInt(configuredStrikes);
+    if (configDictionary['strikes']) {
+        const totalStrikesInput = parseInt(configDictionary['strikes']);
         if (totalStrikesInput == NaN) {
             totalStrikes = 6;
         } else {
@@ -244,12 +261,10 @@
     }
     let remainingStrikes = totalStrikes;
 
-    if (encodedWord) {
+    if (configDictionary['word']) {
         try {
-            targetWord = atob(encodedWord).toUpperCase().replace(/[^A-Z ]/g, "");
-            if (encodedHint) {
-                targetHint = atob(encodedHint);
-            }
+            targetWord = configDictionary['word'].toUpperCase().replace(/[^A-Z ]/g, "");
+            targetHint = configDictionary['hint'];
 
             if (targetWord.length > 0) {
                 initGame();
@@ -273,19 +288,21 @@
             return;
         }
 
-        const encodedW = btoa(cleanWord);
-        let challengeUrl = `${window.location.origin}${window.location.pathname}?word=${encodedW}`;
+        let gameParameters = `word=${cleanWord}`;
         
         if (hintInput) {
-            const encodedH = btoa(hintInput);
-            challengeUrl += `&hint=${encodedH}`;
+            gameParameters += `&hint=${hintInput}`;
         }
 
         if (strikesInput) {
-            challengeUrl += `&strikes=${strikesInput}`;
+            gameParameters += `&strikes=${strikesInput}`;
         }
-        
-        document.getElementById('share-link-text').innerText = challengeUrl;
+
+        const gameParametersEncoded = btoa(gameParameters);
+        const gameIDHashed = cyrb53(gameParametersEncoded);
+        let challengeUrl = `${window.location.origin}${window.location.pathname}?gameparams=${gameParametersEncoded}`;
+
+        document.getElementById('share-link-text').innerText = `${challengeUrl}\n🖊 Guess my HangTime word! Game ID: ${gameIDHashed}`;
         document.getElementById('share-container').classList.remove('hidden');
     }
 
@@ -377,14 +394,13 @@
             resultText.style.color = "#ff4a4a";
             scoreSummaryHeader = `❌ Lost (${strikesSpent}/${totalStrikes} Strikes)`;
         }
+        resultText.innerText += `\n🔤 Word: ${targetWord}\n💡 Hint: ${formattedHint}`;
 
         const visualEmojiChain = matchHistoryTimeline.join("");
-
-        summaryBox.innerText = `🎮 HangTime Challenge\n` +
+        const gameIDHashed = cyrb53(gameParametersEncoded);
+        summaryBox.innerText = `🎮 HangTime Challenge Game ID: ${gameIDHashed}\n` +
                                `${scoreSummaryHeader}\n` +
-                               `${visualEmojiChain}\n\n` +
-                               `🔤 Word: ${targetWord}\n` +
-                               `💡 Hint: ${formattedHint}`;
+                               `${visualEmojiChain}\n`;
 
         document.getElementById('endgame-panel').classList.remove('hidden');
     }
@@ -397,6 +413,22 @@
         }).catch(err => {
             alert("Failed to copy. Please manually highlight and copy.");
         });
+    }
+
+    // Creates non-secure non-collision-avoiding game ID
+    function cyrb53(str, seed = 0) {
+        let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+        for (let i = 0, ch; i < str.length; i++) {
+            ch = str.charCodeAt(i);
+            h1 = Math.imul(h1 ^ ch, 2654435761);
+            h2 = Math.imul(h2 ^ ch, 1597334677);
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+            h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+            h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+        }
+        let hash = 4294967296 * (2097151 & h2) + (h1 >>> 0);
+        return hash >>> 0;
     }
 
     // Global Event Listener for Physical Hardware Keyboard Input
